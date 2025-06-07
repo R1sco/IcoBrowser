@@ -1,0 +1,87 @@
+# Zig build artifacts
+/zig-cache/
+/zig-out/
+*.o
+*.obj
+*.exe
+*.dll
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.idb
+*.pch
+
+# Build output directory
+build/
+dist/
+bin/
+
+# WebView2 runtime
+/WebView2/
+/WebView2Loader.dll
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+.windsurf/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+*.pid
+*.pid.lock
+
+# Local development files
+.env
+.env.local
+.env.*.local
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Debug files
+*.pdb
+*.idb
+*.ilk
+*.iobj
+*.ipdb
+*.pgd
+*.cached
+*.TMP
+*.vs/
+x64/
+x86/
+
+# Local Netlify folder
+.netlify
+
+# Dependencies
+deps/
+node_modules/
+
+# Zig build artifacts specific to this project
+/zig-cache/
+/zig-out/

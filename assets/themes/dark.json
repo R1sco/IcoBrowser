@@ -1,0 +1,16 @@
+{
+    "background_color": "#121212",
+    "text_color": "#E0E0E0",
+    "accent_color": "#64B5F6",
+    "link_color": "#90CAF9",
+    "toolbar_background": "#1E1E1E",
+    "toolbar_text": "#E0E0E0",
+    "sidebar_background": "#252525",
+    "sidebar_text": "#E0E0E0",
+    "success_color": "#81C784",
+    "warning_color": "#FFB74D",
+    "error_color": "#E57373",
+    "name": "Dark Theme",
+    "author": "IcoBrowser Team",
+    "version": "1.0.0"
+}

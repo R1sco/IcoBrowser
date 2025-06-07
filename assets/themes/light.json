@@ -1,0 +1,16 @@
+{
+    "background_color": "#FFFFFF",
+    "text_color": "#333333",
+    "accent_color": "#1A73E8",
+    "link_color": "#0066CC",
+    "toolbar_background": "#F5F5F5",
+    "toolbar_text": "#333333",
+    "sidebar_background": "#F0F0F0",
+    "sidebar_text": "#333333",
+    "success_color": "#4CAF50",
+    "warning_color": "#FF9800",
+    "error_color": "#F44336",
+    "name": "Light Theme",
+    "author": "IcoBrowser Team",
+    "version": "1.0.0"
+}
