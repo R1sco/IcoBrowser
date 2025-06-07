@@ -1,5 +1,12 @@
 const std = @import("std");
 const win32 = @import("win32.zig");
+const utf8ToUtf16Le = win32.utf8ToUtf16Le;
+
+// Handler untuk WebView2 Environment creation
+pub const EnvironmentCreatedHandler = struct {
+    vtable: *const ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandlerVTable,
+    ref_count: usize,
+};
 const windows = std.os.windows;
 const Allocator = std.mem.Allocator;
 
@@ -166,26 +173,6 @@ pub extern "WebView2Loader" fn CreateCoreWebView2EnvironmentWithOptions(
 // Environment creation handler
 pub const ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler = extern struct {
     vtable: *const ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandlerVTable,
-
-    pub fn Invoke(
-        self: *ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler,
-        result: HRESULT,
-        created_environment: ?*ICoreWebView2Environment,
-    ) HRESULT {
-        return self.vtable.Invoke(self, result, created_environment);
-    }
-};
-
-// Helper function untuk konversi string ke UTF-16
-pub fn utf8ToUtf16Le(alloc: std.mem.Allocator, utf8: []const u8) ![:0]u16 {
-    return std.unicode.utf8ToUtf16LeAllocZ(alloc, utf8) catch |err| {
-        return err;
-    };
-}
-
-// Handler untuk WebView2 Environment creation
-pub const EnvironmentCreatedHandler = struct {
-    vtable: *const ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandlerVTable,
     ref_count: usize,
 
     pub fn create() !*EnvironmentCreatedHandler {
@@ -237,7 +224,7 @@ pub const EnvironmentCreatedHandler = struct {
 
         if (created_environment) |env_any| {
             // Cast raw pointer to environment and assign to optional global
-            webview_environment = @as(*ICoreWebView2Environment, env_any);
+            webview_environment = @ptrCast(@alignCast(env_any));
 
             // Create controller
             if (controller_created_handler == null) {
@@ -248,7 +235,9 @@ pub const EnvironmentCreatedHandler = struct {
             }
 
             // Initialize controller on environment
-            const hr = env_any.CreateCoreWebView2Controller(parent_window, controller_created_handler.?);
+            const env: *ICoreWebView2Environment = @ptrCast(@alignCast(env_any));
+const hr = env.CreateCoreWebView2Controller(parent_window, @ptrCast(@alignCast(controller_created_handler.?)));
+
 
             if (hr != 0) { // Not S_OK
                 std.debug.print("Failed to create WebView2 controller: {d}\n", .{hr});
@@ -314,15 +303,15 @@ pub const ControllerCreatedHandler = struct {
 
         if (controller) |ctrl_any| {
             // Cast raw pointer to controller and assign to optional global
-            webview_controller = @as(*ICoreWebView2Controller, ctrl_any);
+            webview_controller = @ptrCast(@alignCast(ctrl_any));
 
             // Get WebView2 core
-            var core: ?*ICoreWebView2 = null;
-            const hr = ctrl_any.GetCoreWebView2(&core);
+            var core: *ICoreWebView2 = undefined;
+            const ctrl: *ICoreWebView2Controller = @ptrCast(@alignCast(ctrl_any));
+const hr = ctrl.GetCoreWebView2(&core);
 
-            if (hr != 0 or core == null) { // Not S_OK or null core
+            if (hr != 0) { // Not S_OK
                 std.debug.print("Failed to get WebView2 core: {d}\n", .{hr});
-                return hr;
             }
 
             webview_core = core;
@@ -382,16 +371,14 @@ pub const WebView2 = struct {
 
         // Create environment handler
         if (environment_created_handler == null) {
-            environment_created_handler = try EnvironmentCreatedHandler.create();
+            environment_created_handler = try ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler.create();
         }
 
         // Create WebView2 environment
-        const hr = CreateCoreWebView2EnvironmentWithOptions(
-            null, // Use default Edge installation
+        const hr = CreateCoreWebView2EnvironmentWithOptions(null, // Use default Edge installation
             null, // Use default user data folder
             null, // No environment options
-            @as(environment_created_handler.?),
-        );
+            @ptrCast(environment_created_handler.?));
 
         if (hr != 0) { // Not S_OK
             std.debug.print("Failed to create WebView2 environment: {d}\n", .{hr});
@@ -433,7 +420,7 @@ pub const WebView2 = struct {
 
 // Resize WebView untuk match window size
 pub fn resizeWebView(width: i32, height: i32) HRESULT {
-    if (webview_controller == null) return -1; // E_FAIL
+    if (webview_controller == null) return -1; // E_FAIL;
 
     const rect = RECT{
         .left = 0,

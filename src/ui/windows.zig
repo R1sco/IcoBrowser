@@ -22,6 +22,17 @@ var hwnd_back_button: ?win32.HWND = null;
 var hwnd_forward_button: ?win32.HWND = null;
 var hwnd_reload_button: ?win32.HWND = null;
 
+// Fungsi untuk menjalankan message loop Windows
+pub fn runMainLoop() !void {
+    var msg: win32.MSG = undefined;
+    
+    // Standard Windows message loop
+    while (win32.GetMessageW(&msg, null, 0, 0) != 0) {
+        _ = win32.TranslateMessage(&msg);
+        _ = win32.DispatchMessageW(&msg);
+    }
+}
+
 // Control IDs (integer command IDs)
 const ID_ADDRESS_BAR: u16 = 101;
 const ID_GO_BUTTON: u16 = 102;
@@ -39,6 +50,30 @@ const WINDOW_CLASS_NAME = "IcoBrowserWindowClass";
 
 // Variabel global allocator sudah ada sebagai g_allocator
 // Variabel global main_window sudah ada sebagai g_main_hwnd
+
+// Window procedure function
+// This is the main message handling function for the window.
+pub fn windowProc(
+    hwnd: win32.HWND,
+    msg: win32.UINT,
+    wparam: win32.WPARAM,
+    lparam: win32.LPARAM,
+) callconv(.C) win32.LRESULT {
+
+
+
+
+    switch (msg) {
+        // TODO: Add message handling for UI controls (WM_COMMAND)
+        // TODO: Handle window resizing (WM_SIZE) to resize WebView2
+        // TODO: Handle window closing (WM_CLOSE, WM_DESTROY)
+
+        else => {
+            return win32.DefWindowProcW(hwnd, msg, wparam, lparam);
+        }
+    }
+}
+
 
 // Initialize Windows application
 pub fn init(alloc_param: std.mem.Allocator) !void {
@@ -106,11 +141,11 @@ pub fn init(alloc_param: std.mem.Allocator) !void {
     try theme.initialize(g_allocator);
 
     // Create address bar and navigation buttons
-    createAddressBarAndNavigationButtons(hwnd);
+    browser_ui.createAddressBarAndNavigationButtons(hwnd);
 
     // Show window
-    _ = win32.ShowWindow(hwnd, win32.SW_SHOW);
-    _ = win32.UpdateWindow(hwnd);
+    _ = win32.ShowWindow(hwnd.?, win32.SW_SHOW);
+    _ = win32.UpdateWindow(hwnd.?);
 
     // ...
 }

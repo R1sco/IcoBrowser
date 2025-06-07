@@ -4,6 +4,14 @@ const webview2 = @import("../platform/windows/webview2.zig");
 // Rules Module untuk IcoBrowser
 // Mengelola aturan browser seperti mode gelap universal dan penyembunyian elemen
 
+// Tipe aksi untuk aturan browser
+pub const ActionType = enum {
+    inject_css,
+    inject_js,
+    block_request,
+    modify_headers,
+};
+
 // Struktur aturan browser
 pub const BrowserRule = struct {
     // Nama aturan
@@ -16,12 +24,7 @@ pub const BrowserRule = struct {
     url_patterns: []const []const u8,
     
     // Tipe aksi
-    action_type: enum {
-        inject_css,
-        inject_js,
-        block_request,
-        modify_headers,
-    },
+    action_type: ActionType,
     
     // Konten aksi (CSS atau JavaScript)
     action_content: []const u8,

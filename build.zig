@@ -21,14 +21,11 @@ pub fn build(b: *std.Build) void {
         exe.linkSystemLibrary("user32");
         exe.linkSystemLibrary("kernel32");
         exe.linkSystemLibrary("gdi32");
-        
-        // Add WebView2 SDK
-        exe.linkSystemLibrary("WebView2Loader");
-        
-        // Add library search paths from vendor directory
-        // Menggunakan WebView2 SDK yang disimpan di direktori vendor lokal
+
+        // Add library search path for WebView2Loader
         exe.addLibraryPath(b.path("vendor/WebView2-SDK/build/native/x64"));
-        
+        exe.linkSystemLibrary("WebView2Loader");
+
         // Windows-specific macros (UNICODE and _UNICODE are typically defined by the Windows SDK)
         // Removed explicit definitions to avoid build issues
     }

@@ -258,6 +258,13 @@ pub fn handleNavigationCompleted(success: bool, url: []const u8) void {
 }
 
 // Clean up
+
+// Stub: Create address bar and navigation buttons
+pub fn createAddressBarAndNavigationButtons(hwnd: anytype) void {
+    // TODO: Implementasi address bar dan tombol navigasi
+    _ = hwnd;
+}
+
 pub fn deinit() void {
     tabs.deinit();
 }
