@@ -75,13 +75,26 @@ desktop.ini
 x64/
 x86/
 
+# Zig build artifacts
+/zig-cache/
+/zig-out/
+
+# Downloaded Zig compiler (should not be in the repo)
+/zig-linux-x86_64-0.11.0/
+/zig-linux-x86_64-0.11.0.tar.xz
+
+# Dependencies
+/deps/
+/node_modules/
+
 # Local Netlify folder
 .netlify
 
-# Dependencies
-deps/
-node_modules/
+# OS-specific files
+.DS_Store
+Thumbs.db
 
-# Zig build artifacts specific to this project
-/zig-cache/
+# Editor-specific files
+.vscode/
+.idea/
 /zig-out/

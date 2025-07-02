@@ -9,13 +9,13 @@ pub fn build(b: *std.Build) void {
     // Main executable
     const exe = b.addExecutable(.{
         .name = "icobrowser",
-        .root_source_file = b.path("src/main.zig"),
+        .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
 
     // Windows-specific: add WebView2 dependencies
-    if (target.result.os.tag == .windows) {
+    if (target.os_tag == .windows) {
         // Add Windows libraries
         exe.linkLibC();
         exe.linkSystemLibrary("user32");
@@ -26,7 +26,7 @@ pub fn build(b: *std.Build) void {
         exe.linkSystemLibrary("uuid");
 
         // Add library search path for WebView2Loader
-        exe.addLibraryPath(b.path("vendor/WebView2-SDK/build/native/x64"));
+        exe.addLibraryPath(.{ .path = "vendor/WebView2-SDK/build/native/x64" });
         exe.linkSystemLibrary("WebView2Loader");
     }
 
@@ -47,7 +47,7 @@ pub fn build(b: *std.Build) void {
 
     // Add tests
     const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/main.zig"),
+        .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
