@@ -18,11 +18,11 @@ var custom_theme_path: ?[]const u8 = null;
 var allocator: std.mem.Allocator = undefined;
 
 // Inisialisasi sistem tema
-pub fn initialize(alloc: std.mem.Allocator) !void {
+pub fn initialize(alloc: std.mem.Allocator) void {
     allocator = alloc;
     
     // Default ke tema terang
-    try setTheme(.light);
+    setTheme(.light) catch |err| std.debug.print("WARNING: Failed to apply default theme: {s}\n", .{@errorName(err)});
 }
 
 // Mengatur tema

@@ -8,8 +8,8 @@ const main_zig = @import("../main.zig"); // Untuk callback
 
 var g_h_instance: win32.HINSTANCE = undefined;
 var g_main_hwnd: ?win32.HWND = null;
-var g_window_class_name: win32.LPCWSTR = undefined;
-var g_allocator: std.mem.Allocator = undefined; // Ditambahkan
+pub var g_window_class_name: win32.LPCWSTR = undefined;
+pub var g_allocator: std.mem.Allocator = undefined; // Ditambahkan
 
 // Callback untuk event dari WebView2
 var g_on_webview_navigation_completed: ?*const fn (success: bool, url: []const u8) void = null;
@@ -26,11 +26,37 @@ var hwnd_reload_button: ?win32.HWND = null;
 pub fn runMainLoop() !void {
     var msg: win32.MSG = undefined;
     
+    std.debug.print("Entering Windows message loop\n", .{});
+    
+    // Pastikan WebView2 sudah diinisialisasi sebelum menjalankan message loop
+    if (webview2.isInitialized()) {
+        std.debug.print("WebView2 is initialized before entering message loop\n", .{});
+    } else {
+        std.debug.print("WARNING: WebView2 is NOT initialized before entering message loop!\n", .{});
+    }
+    
+    // Pastikan window handle valid
+    if (g_main_hwnd) |hwnd| {
+        std.debug.print("Main window handle is valid: {any}\n", .{hwnd});
+        
+        // Coba tampilkan window lagi untuk memastikan
+        _ = win32.ShowWindow(hwnd, win32.SW_SHOW);
+        _ = win32.UpdateWindow(hwnd);
+        std.debug.print("ShowWindow and UpdateWindow called again\n", .{});
+    } else {
+        std.debug.print("ERROR: Main window handle is null before message loop!\n", .{});
+        return error.InvalidWindowHandle;
+    }
+    
     // Standard Windows message loop
+    std.debug.print("Starting GetMessageW loop\n", .{});
     while (win32.GetMessageW(&msg, null, 0, 0) != 0) {
+        std.debug.print("Message received: {d}\n", .{msg.message});
         _ = win32.TranslateMessage(&msg);
         _ = win32.DispatchMessageW(&msg);
     }
+    
+    std.debug.print("Windows message loop exited\n", .{});
 }
 
 // Control IDs (integer command IDs)
@@ -59,19 +85,120 @@ pub fn windowProc(
     wparam: win32.WPARAM,
     lparam: win32.LPARAM,
 ) callconv(.C) win32.LRESULT {
-
-
-
-
+    std.debug.print("Window message received: {d}\n", .{msg});
+    
     switch (msg) {
-        // TODO: Add message handling for UI controls (WM_COMMAND)
-        // TODO: Handle window resizing (WM_SIZE) to resize WebView2
-        // TODO: Handle window closing (WM_CLOSE, WM_DESTROY)
-
-        else => {
-            return win32.DefWindowProcW(hwnd, msg, wparam, lparam);
-        }
+        // Handle window creation
+        win32.WM_CREATE => {
+            std.debug.print("Window created - WM_CREATE received\n", .{});
+            
+            // Pastikan WebView2 diinisialisasi setelah jendela dibuat
+            std.debug.print("Initializing WebView2 from WM_CREATE handler\n", .{});
+            webview2.initialize(g_allocator, hwnd) catch |err| {
+                std.debug.print("ERROR initializing WebView2 from WM_CREATE: {s}\n", .{@errorName(err)});
+                // Lanjutkan meskipun gagal, mungkin akan berhasil nanti
+            };
+            
+            // Pastikan jendela ditampilkan
+            _ = win32.ShowWindow(hwnd, win32.SW_SHOW);
+            _ = win32.UpdateWindow(hwnd);
+            std.debug.print("ShowWindow and UpdateWindow called from WM_CREATE\n", .{});
+            
+            return 0;
+        },
+        
+        // Handle window resizing
+        win32.WM_SIZE => {
+            const lparam_val = @as(u32, @intCast(lparam));
+            const width = @as(i32, @intCast(lparam_val & 0xFFFF));
+            const height = @as(i32, @intCast((lparam_val >> 16) & 0xFFFF));
+            std.debug.print("Window resized: {d}x{d}\n", .{width, height});
+            
+            // Resize WebView2 to match window size
+            if (webview2.isInitialized()) {
+                std.debug.print("Resizing WebView2 to match window size\n", .{});
+                const resize_result = webview2.resizeWebView(width, height - CONTROLS_AREA_HEIGHT);
+                if (resize_result != 0) {
+                    std.debug.print("Failed to resize WebView2: {d}\n", .{resize_result});
+                } else {
+                    std.debug.print("Successfully resized WebView2\n", .{});
+                }
+            } else {
+                std.debug.print("Cannot resize WebView2: not initialized yet\n", .{});
+                
+                // Coba inisialisasi WebView2 jika belum diinisialisasi
+                std.debug.print("Attempting to initialize WebView2 from WM_SIZE handler\n", .{});
+                webview2.initialize(g_allocator, hwnd) catch |err| {
+                    std.debug.print("ERROR initializing WebView2 from WM_SIZE: {s}\n", .{@errorName(err)});
+                };
+            }
+            return 0;
+        },
+        
+        // Handle window closing
+        win32.WM_CLOSE => {
+            std.debug.print("Window closing\n", .{});
+            _ = win32.DestroyWindow(hwnd);
+            return 0;
+        },
+        
+        // Handle window destruction
+        win32.WM_DESTROY => {
+            std.debug.print("Window destroyed\n", .{});
+            win32.PostQuitMessage(0);
+            return 0;
+        },
+        
+        // Handle command messages (from buttons, etc.)
+        win32.WM_COMMAND => {
+            const control_id = @as(u16, @truncate(wparam & 0xFFFF));
+            std.debug.print("Command received from control ID: {d}\n", .{control_id});
+            
+            switch (control_id) {
+                // Handle address bar Go button
+                ID_GO_BUTTON => {
+                    std.debug.print("Go button clicked\n", .{});
+                    browser_ui.navigateToAddressBar() catch |err| {
+                        std.debug.print("Failed to navigate: {any}\n", .{err});
+                    };
+                    return 0;
+                },
+                
+                // Handle back button
+                ID_BACK_BUTTON => {
+                    std.debug.print("Back button clicked\n", .{});
+                    browser_ui.goBack() catch |err| {
+                        std.debug.print("Failed to go back: {any}\n", .{err});
+                    };
+                    return 0;
+                },
+                
+                // Handle forward button
+                ID_FORWARD_BUTTON => {
+                    std.debug.print("Forward button clicked\n", .{});
+                    browser_ui.goForward() catch |err| {
+                        std.debug.print("Failed to go forward: {any}\n", .{err});
+                    };
+                    return 0;
+                },
+                
+                // Handle reload button
+                ID_RELOAD_BUTTON => {
+                    std.debug.print("Reload button clicked\n", .{});
+                    browser_ui.reload() catch |err| {
+                        std.debug.print("Failed to reload: {any}\n", .{err});
+                    };
+                    return 0;
+                },
+                
+                else => {},
+            }
+        },
+        
+        else => {},
     }
+    
+    return win32.DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
 
@@ -125,14 +252,16 @@ pub fn init(alloc_param: std.mem.Allocator) !void {
 
     // Initialize WebView2
     if (hwnd) |h| {
-        try webview2.WebView2.initialize(h, g_allocator);
+        std.debug.print("Attempting to initialize WebView2 with window handle: {any}\n", .{h});
+        try webview2.initialize(g_allocator, h);
+        std.debug.print("WebView2 initialization completed successfully\n", .{});
     } else {
         std.debug.print("Main window handle is null, cannot initialize WebView2\n", .{});
         return error.InvalidHandle;
     }
 
     // Set navigation completed callback
-    webview2.WebView2.setNavigationCompletedCallback(browser_ui.handleNavigationCompleted);
+    webview2.setNavigationCompletedCallback(browser_ui.handleNavigationCompleted);
 
     // Initialize browser UI
     try browser_ui.initialize(g_allocator);

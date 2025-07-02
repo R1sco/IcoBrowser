@@ -48,6 +48,7 @@ pub fn initialize(alloc: std.mem.Allocator) !void {
     if (is_initialized) return;
     
     allocator = alloc;
+    is_initialized = true;
     
     // Tambahkan domain berbahaya default
     try addBlockedDomain("malware-site.com", .malware);
@@ -58,7 +59,7 @@ pub fn initialize(alloc: std.mem.Allocator) !void {
     // Sesuaikan pengaturan berdasarkan tingkat keamanan default
     try setSecurityLevel(.medium);
     
-    is_initialized = true;
+    // is_initialized = true; // moved before addBlockedDomain calls
 }
 
 // Mengatur tingkat keamanan
@@ -140,6 +141,22 @@ pub fn isDomainBlocked(domain: []const u8) bool {
 }
 
 // Memeriksa keamanan URL
+
+// Deinitialize enhanced security module
+pub fn deinit() void {
+    if (!is_initialized) return;
+    // Free all domain keys
+    var it = blocked_domains.iterator();
+    while (it.next()) |entry| {
+        // entry.key_ptr adalah pointer ke slice, jadi kita harus mengakses slice-nya dulu
+        const key: []const u8 = entry.key_ptr.*;
+        allocator.free(key);
+    }
+    blocked_domains.deinit();
+    is_initialized = false;
+}
+
+// Menghasilkan header keamanan untuk permintaan
 pub fn checkUrlSecurity(url: []const u8) !struct { safe: bool, threat: ?ThreatType } {
     if (!is_initialized) return error.SecurityModuleNotInitialized;
     
@@ -263,13 +280,4 @@ pub fn handlePermissionRequest(permission: []const u8, origin: []const u8) !bool
     return security.SecurityModule.checkPermission(permission);
 }
 
-// Membersihkan sumber daya
-pub fn deinit() void {
-    var it = blocked_domains.iterator();
-    while (it.next()) |entry| {
-        allocator.free(entry.key_ptr.*);
-    }
-    blocked_domains.deinit();
-    
-    is_initialized = false;
-}
+

@@ -19,6 +19,7 @@ pub const LONG = i32;
 pub const UINT = c_uint;
 pub const BOOL = i32;
 pub const LPVOID = ?*anyopaque;
+pub const HRESULT = i32;
 
 // UTF-16 null-terminated wide string pointer types for Win32 API
 pub const LPCWSTR = [*:0]const u16;
@@ -55,12 +56,23 @@ pub const WC_BUTTONW: LPCWSTR = @ptrFromInt(0x0080);
 pub const WC_EDITW:   LPCWSTR = @ptrFromInt(0x0081);
 
 // Window messages
-pub const WM_CREATE = 0x0001;
-pub const WM_DESTROY = 0x0002;
-pub const WM_SIZE = 0x0005;
-pub const WM_CLOSE = 0x0010;
+pub const WM_CREATE: u32 = 0x0001;
+
+// PeekMessage constants
+pub const PM_NOREMOVE: UINT = 0x0000;
+pub const PM_REMOVE: UINT = 0x0001;
+pub const PM_NOYIELD: UINT = 0x0002;
+pub const WM_DESTROY: u32 = 0x0002;
+pub const WM_SIZE: u32 = 0x0005;
+pub const WM_CLOSE: u32 = 0x0010;
 pub const WM_QUIT = 0x0012;
-pub const WM_COMMAND = 0x0111;
+pub const WM_COMMAND: u32 = 0x0111;
+
+// COM initialization flags
+pub const COINIT_APARTMENTTHREADED: u32 = 0x2;
+pub const COINIT_MULTITHREADED: u32 = 0x0;
+pub const COINIT_DISABLE_OLE1DDE: u32 = 0x4;
+pub const COINIT_SPEED_OVER_MEMORY: u32 = 0x8;
 
 // Window show commands
 pub const SW_SHOW = 5;
@@ -131,6 +143,7 @@ pub extern "user32" fn CreateWindowExW(
 pub extern "user32" fn ShowWindow(hWnd: HWND, nCmdShow: c_int) callconv(.C) BOOL;
 pub extern "user32" fn UpdateWindow(hWnd: HWND) callconv(.C) BOOL;
 pub extern "user32" fn GetMessageW(lpMsg: *MSG, hWnd: ?HWND, wMsgFilterMin: UINT, wMsgFilterMax: UINT) callconv(.C) BOOL;
+pub extern "user32" fn PeekMessageW(lpMsg: *MSG, hWnd: ?HWND, wMsgFilterMin: UINT, wMsgFilterMax: UINT, wRemoveMsg: UINT) callconv(.C) BOOL;
 pub extern "user32" fn TranslateMessage(lpMsg: *const MSG) callconv(.C) BOOL;
 pub extern "user32" fn DispatchMessageW(lpMsg: *const MSG) callconv(.C) LRESULT;
 pub extern "user32" fn DefWindowProcW(hWnd: HWND, Msg: UINT, wParam: WPARAM, lParam: LPARAM) callconv(.C) LRESULT;
@@ -163,8 +176,35 @@ pub inline fn HIWORD(dw: LPARAM) WORD {
 }
 
 // Helper function untuk konversi string ke UTF-16
-pub fn utf8ToUtf16Le(allocator: std.mem.Allocator, utf8: []const u8) ![:0]u16 {
-    return std.unicode.utf8ToUtf16LeAllocZ(allocator, utf8) catch |err| {
-        return err;
-    };
+pub fn utf8ToUtf16Le(allocator: std.mem.Allocator, str: []const u8) ![:0]u16 {
+    return std.unicode.utf8ToUtf16LeAllocZ(allocator, str);
 }
+
+// COM API functions
+pub extern "ole32" fn CoInitializeEx(pvReserved: ?*anyopaque, dwCoInit: DWORD) callconv(.C) HRESULT;
+pub extern "ole32" fn CoUninitialize() callconv(.C) void;
+
+// COM Interface GUIDs and Structures
+pub const GUID = extern struct {
+    data1: u32,
+    data2: u16,
+    data3: u16,
+    data4: [8]u8,
+};
+
+pub const IID_IUnknown = GUID{
+    .data1 = 0x00000000,
+    .data2 = 0x0000,
+    .data3 = 0x0000,
+    .data4 = .{ 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 },
+};
+
+pub const IUnknownVtbl = extern struct {
+    QueryInterface: *const fn (self: *IUnknown, riid: *const GUID, ppvObject: *?*anyopaque) callconv(.C) HRESULT,
+    AddRef: *const fn (self: *IUnknown) callconv(.C) u32,
+    Release: *const fn (self: *IUnknown) callconv(.C) u32,
+};
+
+pub const IUnknown = extern struct {
+    vtable: *const IUnknownVtbl,
+};

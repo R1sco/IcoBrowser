@@ -127,7 +127,7 @@ pub fn navigateToAddressBar() !void {
     is_loading = true;
 
     // Navigate to URL
-    try webview2.WebView2.navigate(url);
+    try webview2.navigate(url);
 }
 
 // Create new tab
@@ -184,7 +184,7 @@ pub fn setActiveTab(index: usize) void {
     // Navigate to tab URL
     const url = tabs.items[active_tab_index].url[0..tabs.items[active_tab_index].url_len];
     if (url.len > 0) {
-        webview2.WebView2.navigate(url) catch |err| {
+        webview2.navigate(url) catch |err| {
             std.debug.print("Failed to navigate to URL: {any}\n", .{err});
         };
     }

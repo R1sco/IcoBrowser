@@ -21,14 +21,15 @@ pub fn build(b: *std.Build) void {
         exe.linkSystemLibrary("user32");
         exe.linkSystemLibrary("kernel32");
         exe.linkSystemLibrary("gdi32");
+        exe.linkSystemLibrary("ole32");
+        exe.linkSystemLibrary("oleaut32");
+        exe.linkSystemLibrary("uuid");
 
         // Add library search path for WebView2Loader
         exe.addLibraryPath(b.path("vendor/WebView2-SDK/build/native/x64"));
         exe.linkSystemLibrary("WebView2Loader");
-
-        // Windows-specific macros (UNICODE and _UNICODE are typically defined by the Windows SDK)
-        // Removed explicit definitions to avoid build issues
     }
+
 
     // Install the executable
     b.installArtifact(exe);
