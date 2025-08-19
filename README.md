@@ -9,7 +9,7 @@ IcoBrowser adalah browser desktop yang minimalis, cepat, dan dapat diprogram ole
 ## Teknologi
 
 - **Bahasa Utama**: Zig
-- **Rendering Engine & GUI (Windows)**: Microsoft Edge WebView2
+- **Rendering Engine & GUI (Windows)**: Ultra Light SDK
 - **Sistem Build**: Zig Build System
 
 ## Fitur Inti
