@@ -106,5 +106,3 @@ zig build run
 - Optimalisasi performa dan penggunaan memori
 
 ## Lisensi
-
-[Lisensi Proyek]
